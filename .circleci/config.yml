@@ -7,11 +7,17 @@ jobs:
 
     steps:
       - run:
-          name: Test SSH
+          name: Configure Hostname
           command: |
-            set -x
-
-            sshpass -p "$CISCO_PASS" ssh -v \
+            {
+              printf '%s\r\n' \
+              'enable' \
+              'Jstech001!' \
+              'configure terminal' \
+              'hostname GP-Router' \
+              'end' \
+              'write memory'
+            } | sshpass -p 'cisco1' ssh -tt \
               -o StrictHostKeyChecking=no \
               -o UserKnownHostsFile=/dev/null \
               -o PreferredAuthentications=password \
@@ -20,8 +26,7 @@ jobs:
               -o KexAlgorithms=+diffie-hellman-group14-sha1 \
               -o Ciphers=aes256-cbc,aes192-cbc,aes128-cbc,3des-cbc \
               -o MACs=+hmac-sha1 \
-              "${CISCO_USER}@${CISCO_HOST}" \
-              "show clock"
+              admin1@10.18.18.170
 
 workflows:
   config:
