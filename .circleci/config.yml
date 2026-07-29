@@ -9,21 +9,17 @@ jobs:
       - run:
           name: Test SSH
           command: |
-            set -eux
-
-            echo "HOST=$CISCO_HOST"
-            echo "USER=$CISCO_USER"
-
-            sshpass -V
+            set -euo pipefail
 
             sshpass -p "$CISCO_PASS" ssh \
-              -v \
               -o StrictHostKeyChecking=no \
               -o UserKnownHostsFile=/dev/null \
               -o PreferredAuthentications=password \
               -o PubkeyAuthentication=no \
               -o HostKeyAlgorithms=+ssh-rsa \
               -o KexAlgorithms=+diffie-hellman-group14-sha1 \
+              -o Ciphers=aes256-cbc,aes192-cbc,aes128-cbc,3des-cbc \
+              -o MACs=+hmac-sha1 \
               "${CISCO_USER}@${CISCO_HOST}" \
               "show clock"
 
