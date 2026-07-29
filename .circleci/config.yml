@@ -1,19 +1,36 @@
 version: 2.1
  
 jobs:
+
   config_cisco:
+
     machine: true
+
     resource_class: harutoendo/cisco-resouce
+
     steps:
+
       - run:
-          name: Runner test
+
+          name: SSH test
+
           command: |
-            echo "CircleCI Runner OK"
-            whoami
-            hostname
-            pwd
+
+            ssh \
+
+              -o KexAlgorithms=+diffie-hellman-group14-sha1 \
+
+              -o HostKeyAlgorithms=+ssh-rsa \
+
+              -o Ciphers=+aes128-cbc,3des-cbc \
+
+              "${CISCO_USER}@${CISCO_HOST}"
  
 workflows:
+
   config:
+
     jobs:
+
       - config_cisco
+ 
