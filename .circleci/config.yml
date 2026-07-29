@@ -8,7 +8,8 @@ jobs:
     steps:
       - run:
           name: Install expect
-          command: |            set -e
+          command: |            
+            set -e
 
             if ! command -v expect >/dev/null 2>&1; then
               sudo apt-get update
@@ -17,7 +18,8 @@ jobs:
 
       - run:
           name: Configure Cisco Hostname
-          command: |            set -euo pipefail
+          command: |            
+            set -euo pipefail
             set +x
 
             : "${CISCO_HOST:?CISCO_HOST is required}"
