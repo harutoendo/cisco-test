@@ -7,11 +7,21 @@ jobs:
 
     steps:
       - run:
-          name: Debug Variables
+          name: Test SSH
           command: |
-            echo "USER=$CISCO_USER"
-            echo "PASS_LENGTH=${#CISCO_PASS}"
-            echo "HOST=$CISCO_HOST"
+            set -x
+
+            sshpass -p "$CISCO_PASS" ssh -v \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o PreferredAuthentications=password \
+              -o PubkeyAuthentication=no \
+              -o HostKeyAlgorithms=+ssh-rsa \
+              -o KexAlgorithms=+diffie-hellman-group14-sha1 \
+              -o Ciphers=aes256-cbc,aes192-cbc,aes128-cbc,3des-cbc \
+              -o MACs=+hmac-sha1 \
+              "${CISCO_USER}@${CISCO_HOST}" \
+              "show clock"
 
 workflows:
   config:
