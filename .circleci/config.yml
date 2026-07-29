@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   config_cisco:
     machine: true
-    resource_class: endoharuto/cisco-resource
+    resource_class: endoharuto/cisco-resouce
     steps:
       - run:
           name: Install sshpass (for password auth)
