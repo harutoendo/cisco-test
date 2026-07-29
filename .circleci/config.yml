@@ -1,36 +1,41 @@
 version: 2.1
  
 jobs:
-
   config_cisco:
-
     machine: true
-
     resource_class: harutoendo/cisco-resouce
-
     steps:
-
       - run:
-
-          name: SSH test
-
+          name: Install sshpass
           command: |
-
-            ssh \
-
-              -o KexAlgorithms=+diffie-hellman-group14-sha1 \
-
-              -o HostKeyAlgorithms=+ssh-rsa \
-
-              -o Ciphers=+aes128-cbc,3des-cbc \
-
-              "${CISCO_USER}@${CISCO_HOST}"
+            set -eux
+            if ! command -v sshpass >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y sshpass
+            fi
+ 
+      - run:
+          name: Cisco SSH test
+          command: |
+            set -euxo pipefail
+ 
+            : "${CISCO_HOST:?CISCO_HOST is required}"
+            : "${CISCO_USER:?CISCO_USER is required}"
+            : "${CISCO_PASS:?CISCO_PASS is required}"
+ 
+            sshpass -p "$CISCO_PASS" ssh \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o BatchMode=no \
+              -o PreferredAuthentications=password \
+              -o PubkeyAuthentication=no \
+              -o KexAlgorithms=diffie-hellman-group14-sha1,diffie-hellman-group1-sha1,diffie-hellman-group-exchange-sha1 \
+              -o HostKeyAlgorithms=ssh-rsa \
+              -o Ciphers=aes256-cbc,aes192-cbc,aes128-cbc,3des-cbc \
+              "${CISCO_USER}@${CISCO_HOST}" \
+              "show version"
  
 workflows:
-
   config:
-
     jobs:
-
       - config_cisco
- 
