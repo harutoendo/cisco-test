@@ -1,302 +1,142 @@
 version: 2.1
- 
+
 jobs:
-
   config_cisco:
-
     machine: true
-
     resource_class: harutoendo/cisco-resouce
- 
+
     steps:
-
       - run:
-
-          name: Install expect
-
-          command: |
-
-            set -e
- 
-            if ! command -v expect >/dev/null 2>&1; then
-
-              sudo apt-get update
-
-              sudo apt-get install -y expect
-
-            fi
- 
-      - run:
-
           name: Configure Cisco Hostname
-
-          command: |
-
-            set -euo pipefail
-
+          command: |            
+           set -euo pipefail
             set +x
- 
+
             : "${CISCO_HOST:?CISCO_HOST is required}"
-
             : "${CISCO_USER:?CISCO_USER is required}"
-
             : "${CISCO_PASS:?CISCO_PASS is required}"
-
             : "${CISCO_ENABLE:?CISCO_ENABLE is required}"
- 
+
+            command -v expect >/dev/null 2>&1 || {
+              echo "ERROR: expect is not installed on the Runner node"
+              exit 1
+            }
+
             expect \<<'EXPECT_SCRIPT'
-
             set timeout 30
- 
+
             set host        $env(CISCO_HOST)
-
             set username    $env(CISCO_USER)
-
             set login_pass  $env(CISCO_PASS)
-
             set enable_pass $env(CISCO_ENABLE)
- 
+
             spawn ssh \
-
               -tt \
-
               -o StrictHostKeyChecking=no \
-
               -o UserKnownHostsFile=/dev/null \
-
               -o BatchMode=no \
-
               -o PreferredAuthentications=keyboard-interactive,password \
-
               -o PubkeyAuthentication=no \
-
               -o Ciphers=aes256-cbc,aes192-cbc,aes128-cbc,3des-cbc \
-
               -o KexAlgorithms=diffie-hellman-group14-sha1,diffie-hellman-group1-sha1,diffie-hellman-group-exchange-sha1 \
-
               -o HostKeyAlgorithms=ssh-rsa \
-
               ${username}@${host}
- 
+
             expect {
-
               -nocase -re {password: *$} {
-
                 send -- "$login_pass\r"
-
               }
-
               -nocase -re {permission denied} {
-
-                puts "ERROR: SSHユーザー名またはパスワードが違います"
-
+                puts "ERROR: SSH username or password is incorrect"
                 exit 1
-
               }
-
               timeout {
-
-                puts "ERROR: SSHログインのパスワード要求がありません"
-
+                puts "ERROR: SSH login timeout"
                 exit 1
-
               }
-
               eof {
-
-                puts "ERROR: SSH接続が終了しました"
-
+                puts "ERROR: SSH connection closed"
                 exit 1
-
               }
-
             }
- 
-            expect {
 
+            expect {
               -re {> *$} {
-
                 send -- "enable\r"
-
               }
-
               -re {# *$} {
-
-                puts "Already in privileged EXEC mode"
-
                 send -- "terminal length 0\r"
-
               }
-
-              -nocase -re {permission denied} {
-
-                puts "ERROR: SSHログイン認証に失敗しました"
-
-                exit 1
-
-              }
-
               timeout {
-
-                puts "ERROR: Ciscoのプロンプトを確認できません"
-
+                puts "ERROR: Cisco prompt not found"
                 exit 1
-
               }
-
               eof {
-
-                puts "ERROR: CiscoがSSH接続を終了しました"
-
+                puts "ERROR: Cisco closed the SSH connection"
                 exit 1
-
               }
-
             }
- 
-            expect {
 
+            expect {
               -nocase -re {password: *$} {
-
                 send -- "$enable_pass\r"
- 
+
                 expect {
-
                   -re {# *$} {
-
                     send -- "terminal length 0\r"
-
                   }
-
                   -re {> *$} {
-
-                    puts "ERROR: enableパスワードが違います"
-
+                    puts "ERROR: enable password is incorrect"
                     exit 1
-
                   }
-
-                  -nocase -re {access denied|bad password|authentication failed} {
-
-                    puts "ERROR: enable認証に失敗しました"
-
-                    exit 1
-
-                  }
-
                   timeout {
-
-                    puts "ERROR: 特権EXECモードへ移行できません"
-
+                    puts "ERROR: Failed to enter privileged mode"
                     exit 1
-
                   }
-
                 }
-
               }
- 
               -re {# *$} {
-
-                # すでにterminal length 0を送信済み
-
               }
- 
               timeout {
-
-                puts "ERROR: enable処理で応答がありません"
-
+                puts "ERROR: enable processing timeout"
                 exit 1
-
               }
-
             }
- 
+
             expect -re {# *$}
-
             send -- "configure terminal\r"
- 
-            expect {
 
-              -re {\(config\)# *$} {
-
-              }
-
-              timeout {
-
-                puts "ERROR: configure terminalに失敗しました"
-
-                exit 1
-
-              }
-
-            }
- 
+            expect -re {\(config\)# *$}
             send -- "no ip domain-lookup\r"
 
             expect -re {\(config\)# *$}
- 
             send -- "hostname GP-Router\r"
 
             expect -re {GP-Router\(config\)# *$}
- 
             send -- "end\r"
 
             expect -re {GP-Router# *$}
- 
             send -- "write memory\r"
- 
-            expect {
 
-              -re {GP-Router# *$} {
-
-              }
-
-              timeout {
-
-                puts "ERROR: write memoryが完了しませんでした"
-
-                exit 1
-
-              }
-
-            }
- 
-            send -- "show running-config | include ^hostname\r"
- 
-            expect {
-
-              -re {hostname GP-Router} {
-
-                puts "SUCCESS: hostname changed to GP-Router"
-
-              }
-
-              timeout {
-
-                puts "ERROR: ホスト名の変更を確認できません"
-
-                exit 1
-
-              }
-
-            }
- 
             expect -re {GP-Router# *$}
+            send -- "show running-config | include ^hostname\r"
 
+            expect {
+              -re {hostname GP-Router} {
+                puts "SUCCESS: hostname changed to GP-Router"
+              }
+              timeout {
+                puts "ERROR: hostname verification failed"
+                exit 1
+              }
+            }
+
+            expect -re {GP-Router# *$}
             send -- "exit\r"
-
             expect eof
- 
-            exit 0
-
             EXPECT_SCRIPT
- 
+
 workflows:
-
   config:
-
     jobs:
-
       - config_cisco
- 
