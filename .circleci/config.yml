@@ -45,7 +45,7 @@ jobs:
             } | sshpass -p "$CISCO_PASS" ssh -tt \
                   -o StrictHostKeyChecking=accept-new \
                   -o BatchMode=no \
-                  -o PreferredAuthentications=password \
+                  -o PreferredAuthentications=keyboard-interactive,password \
                   -o PubkeyAuthentication=no \
                   -o Ciphers=aes256-cbc,aes192-cbc,aes128-cbc,3des-cbc \
                   -o KexAlgorithms=diffie-hellman-group14-sha1,diffie-hellman-group1-sha1,diffie-hellman-group-exchange-sha1 \
