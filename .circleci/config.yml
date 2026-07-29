@@ -1,30 +1,22 @@
 version: 2.1
- 
+
 jobs:
   config_cisco:
     machine: true
     resource_class: harutoendo/cisco-resouce
+
     steps:
       - run:
-          name: Cisco SSH test
+          name: Debug runner
           command: |
-            set -euo pipefail
- 
-            : "${CISCO_HOST:?CISCO_HOST is required}"
-            : "${CISCO_USER:?CISCO_USER is required}"
-            : "${CISCO_PASS:?CISCO_PASS is required}"
- 
-            sshpass -p "$CISCO_PASS" ssh -tt \
-              -o StrictHostKeyChecking=no \
-              -o UserKnownHostsFile=/dev/null \
-              -o BatchMode=no \
-              -o PreferredAuthentications=password \
-              -o PubkeyAuthentication=no \
-              -o KexAlgorithms=diffie-hellman-group14-sha1,diffie-hellman-group1-sha1,diffie-hellman-group-exchange-sha1 \
-              -o HostKeyAlgorithms=ssh-rsa \
-              -o Ciphers=aes256-cbc,aes192-cbc,aes128-cbc,3des-cbc \
-              "${CISCO_USER}@${CISCO_HOST}"
- 
+            echo "===== DEBUG ====="
+            whoami
+            hostname
+            pwd
+            which sshpass || true
+            ls -l /usr/bin/sshpass || true
+            sshpass -V || true
+
 workflows:
   config:
     jobs:
