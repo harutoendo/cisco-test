@@ -7,15 +7,25 @@ jobs:
 
     steps:
       - run:
-          name: Debug runner
+          name: Test SSH
           command: |
-            echo "===== DEBUG ====="
-            whoami
-            hostname
-            pwd
-            which sshpass || true
-            ls -l /usr/bin/sshpass || true
-            sshpass -V || true
+            set -eux
+
+            echo "HOST=$CISCO_HOST"
+            echo "USER=$CISCO_USER"
+
+            sshpass -V
+
+            sshpass -p "$CISCO_PASS" ssh \
+              -v \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o PreferredAuthentications=password \
+              -o PubkeyAuthentication=no \
+              -o HostKeyAlgorithms=+ssh-rsa \
+              -o KexAlgorithms=+diffie-hellman-group14-sha1 \
+              "${CISCO_USER}@${CISCO_HOST}" \
+              "show clock"
 
 workflows:
   config:
